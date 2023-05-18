@@ -11,6 +11,7 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPOSITORY_FRONTEND: 818363358821.dkr.ecr.us-east-1.amazonaws.com/fe
   ECR_REPOSITORY_BACKEND: 818363358821.dkr.ecr.us-east-1.amazonaws.com/be
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -25,6 +26,9 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Determine changed folder
         id: changed-folder
