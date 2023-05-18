@@ -35,12 +35,14 @@ jobs:
         run: |
           cd packages/express-backend
           docker build -t express-backend .
+          AWS_ECR_PASSWORD=$(aws ecr get-login-password --region ${{ env.AWS_REGION }})
+          echo $AWS_ECR_PASSWORD | docker login --username AWS --password-stdin 818363358821.dkr.ecr.us-east-1.amazonaws.com/be
           docker tag express-backend ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
           docker push ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
 
       - name: Update ECS task definition
         run: |
-          aws ecs register-task-definition \
+          TASK_DEFINITION_BACKEND=$(aws ecs register-task-definition \
             --region ${{ env.AWS_REGION }} \
             --family ${{ env.ECS_TASK_DEFINITION_BACKEND }} \
             --container-definitions '[
@@ -53,10 +55,14 @@ jobs:
             ]' \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text
+          )
+
+          echo "TASK_DEFINITION_BACKEND=$TASK_DEFINITION_BACKEND" >> $GITHUB_ENV
 
       - name: Update ECS service
         run: |
           aws ecs update-service \
+            --region ${{ env.AWS_REGION }} \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service ${{ env.ECS_SERVICE_BACKEND }} \
             --force-new-deployment
