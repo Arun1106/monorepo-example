@@ -44,7 +44,7 @@ jobs:
           docker tag react-frontend ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
           docker push ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
 
-          cd ../express-backend
+          cd ../packages/express-backend
           docker build -t express-backend .
           AWS_ECR_PASSWORD=$(aws ecr get-login-password --region ${{ env.AWS_REGION }})
           echo $AWS_ECR_PASSWORD | docker login --username AWS --password-stdin 818363358821.dkr.ecr.us-east-1.amazonaws.com/be
@@ -83,8 +83,8 @@ jobs:
             --output text
           )
 
-          echo "::set-env name=TASK_DEFINITION_FRONTEND::$TASK_DEFINITION_FRONTEND"
-          echo "::set-env name=TASK_DEFINITION_BACKEND::$TASK_DEFINITION_BACKEND"
+          echo "TASK_DEFINITION_FRONTEND=$TASK_DEFINITION_FRONTEND" >> $GITHUB_ENV
+          echo "TASK_DEFINITION_BACKEND=$TASK_DEFINITION_BACKEND" >> $GITHUB_ENV
 
       - name: Update ECS services
         run: |
