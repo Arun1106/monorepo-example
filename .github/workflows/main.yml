@@ -29,18 +29,18 @@ jobs:
 
       - name: Determine changed folder
         id: changed-folder
-        run: echo "::set-output name=folder::$(git diff --name-only HEAD^..HEAD | grep -E 'frontend|backend' | cut -d'/' -f2 | sort -u)"
+        run: echo "::set-output name=folder::$(git diff --name-only HEAD^..HEAD | grep -E 'react-frontend|express-backend' | cut -d'/' -f2 | sort -u)"
 
       - name: Build and push Docker image
         run: |
-          if [ "${{ steps.changed-folder.outputs.folder }}" == "frontend" ]; then
+          if [ "${{ steps.changed-folder.outputs.folder }}" == "react-frontend" ]; then
             cd packages/frontend
             docker build -t frontend .
             docker tag frontend ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
             docker push ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
           fi
           
-          if [ "${{ steps.changed-folder.outputs.folder }}" == "backend" ]; then
+          if [ "${{ steps.changed-folder.outputs.folder }}" == "express-backend" ]; then
             cd packages/backend
             docker build -t backend .
             docker tag backend ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
