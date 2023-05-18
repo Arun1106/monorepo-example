@@ -39,7 +39,12 @@ jobs:
           elif [[ -n "${CHANGED_BACKEND}" ]]; then
             echo "::set-output name=folder::express-backend"
           else
-            echo "::set-output name=folder::"
+            FIRST_COMMIT=$(git rev-list --max-parents=0 HEAD)
+            if [ -n "${FIRST_COMMIT}" ]; then
+              echo "::set-output name=folder::"
+            else
+              echo "::set-output name=folder::both"
+            fi
           fi
 
       - name: Build and push Docker image
@@ -53,6 +58,16 @@ jobs:
             docker push ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
           elif [ "${FOLDER}" == "express-backend" ]; then
             cd packages/express-backend
+            docker build -t express-backend .
+            docker tag express-backend ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
+            docker push ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
+          elif [ "${FOLDER}" == "both" ]; then
+            cd packages/react-frontend
+            docker build -t react-frontend .
+            docker tag react-frontend ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
+            docker push ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
+
+            cd ../express-backend
             docker build -t express-backend .
             docker tag express-backend ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
             docker push ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
