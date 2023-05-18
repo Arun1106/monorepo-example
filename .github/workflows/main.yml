@@ -6,11 +6,11 @@ on:
       - main
 
 env:
-  AWS_REGION: <your-aws-region>
+  AWS_REGION: us-east-1
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  ECR_REPOSITORY_FRONTEND: <your-ecr-repository-frontend>
-  ECR_REPOSITORY_BACKEND: <your-ecr-repository-backend>
+  ECR_REPOSITORY_FRONTEND: 818363358821.dkr.ecr.us-east-1.amazonaws.com/fe
+  ECR_REPOSITORY_BACKEND: 818363358821.dkr.ecr.us-east-1.amazonaws.com/be
 
 jobs:
   build-and-push:
