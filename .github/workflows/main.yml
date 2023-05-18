@@ -94,7 +94,8 @@ jobs:
                 {
                   "name": "frontend",
                   "image": "'${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}'",
-                  "essential": true
+                  "essential": true,
+                  "memory": 512
                 }
               ]' \
               --query 'taskDefinition.taskDefinitionArn' \
@@ -108,7 +109,8 @@ jobs:
                 {
                   "name": "backend",
                   "image": "'${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}'",
-                  "essential": true
+                  "essential": true,
+                  "memory": 512
                 }
               ]' \
               --query 'taskDefinition.taskDefinitionArn' \
@@ -123,7 +125,8 @@ jobs:
                 {
                   "name": "frontend",
                   "image": "'${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}'",
-                  "essential": true
+                  "essential": true,
+                  "memory": 512
                 }
               ]'
 
@@ -135,7 +138,8 @@ jobs:
                 {
                   "name": "backend",
                   "image": "'${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}'",
-                  "essential": true
+                  "essential": true,
+                  "memory": 512
                 }
               ]'
           fi
