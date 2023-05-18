@@ -35,12 +35,14 @@ jobs:
         run: |
           cd packages/react-frontend
           docker build -t react-frontend .
+          AWS_ECR_PASSWORD=$(aws ecr get-login-password --region ${{ env.AWS_REGION }})
+          echo $AWS_ECR_PASSWORD | docker login --username AWS --password-stdin 818363358821.dkr.ecr.us-east-1.amazonaws.com/fe
           docker tag react-frontend ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
           docker push ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
 
       - name: Update ECS task definition
         run: |
-          aws ecs register-task-definition \
+          TASK_DEFINITION_FRONTEND=$(aws ecs register-task-definition \
             --region ${{ env.AWS_REGION }} \
             --family ${{ env.ECS_TASK_DEFINITION_FRONTEND }} \
             --container-definitions '[
@@ -53,10 +55,14 @@ jobs:
             ]' \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text
+          )
+
+          echo "TASK_DEFINITION_FRONTEND=$TASK_DEFINITION_FRONTEND" >> $GITHUB_ENV
 
       - name: Update ECS service
         run: |
           aws ecs update-service \
+            --region ${{ env.AWS_REGION }} \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service ${{ env.ECS_SERVICE_FRONTEND }} \
             --force-new-deployment
