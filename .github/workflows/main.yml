@@ -43,8 +43,8 @@ jobs:
             echo "::set-output name=folder::both"
           else
             CHANGED_FILES=$(git diff --name-only HEAD^..HEAD)
-            CHANGED_FRONTEND=$(echo "${CHANGED_FILES}" | grep -E '^react-frontend/')
-            CHANGED_BACKEND=$(echo "${CHANGED_FILES}" | grep -E '^express-backend/')
+            CHANGED_FRONTEND=$(echo "${CHANGED_FILES}" | grep -E '^packages/react-frontend/')
+            CHANGED_BACKEND=$(echo "${CHANGED_FILES}" | grep -E '^packages/express-backend/')
 
             if [[ -n "${CHANGED_FRONTEND}" ]]; then
               echo "::set-output name=folder::react-frontend"
