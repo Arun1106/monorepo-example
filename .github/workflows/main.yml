@@ -16,10 +16,6 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        folder: [express-backend, react-frontend]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -31,13 +27,22 @@ jobs:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: Determine changed folder
+        id: changed-folder
+        run: echo "::set-output name=folder::$(git diff --name-only HEAD^..HEAD | grep -E 'frontend|backend' | cut -d'/' -f2 | sort -u)"
 
       - name: Build and push Docker image
-        working-directory: packages/${{ matrix.folder }}
         run: |
-          docker build -t ${{ matrix.folder }} .
-          docker tag ${{ matrix.folder }} ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
-          docker push ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
+          if [ "${{ steps.changed-folder.outputs.folder }}" == "frontend" ]; then
+            cd packages/frontend
+            docker build -t frontend .
+            docker tag frontend ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
+            docker push ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
+          fi
+          
+          if [ "${{ steps.changed-folder.outputs.folder }}" == "backend" ]; then
+            cd packages/backend
+            docker build -t backend .
+            docker tag backend ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
+            docker push ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
+          fi
