@@ -11,7 +11,6 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPOSITORY_FRONTEND: 818363358821.dkr.ecr.us-east-1.amazonaws.com/fe
   ECR_REPOSITORY_BACKEND: 818363358821.dkr.ecr.us-east-1.amazonaws.com/be
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -30,20 +29,20 @@ jobs:
       - name: Determine changed folder
         id: changed-folder
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD^..HEAD)
-          CHANGED_FRONTEND=$(echo "${CHANGED_FILES}" | grep -E '^react-frontend/')
-          CHANGED_BACKEND=$(echo "${CHANGED_FILES}" | grep -E '^express-backend/')
-
-          if [[ -n "${CHANGED_FRONTEND}" ]]; then
-            echo "::set-output name=folder::react-frontend"
-          elif [[ -n "${CHANGED_BACKEND}" ]]; then
-            echo "::set-output name=folder::express-backend"
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          if [ "${COMMIT_COUNT}" == "0" ]; then
+            echo "::set-output name=folder::both"
           else
-            FIRST_COMMIT=$(git rev-list --max-parents=0 HEAD)
-            if [ -n "${FIRST_COMMIT}" ]; then
-              echo "::set-output name=folder::"
+            CHANGED_FILES=$(git diff --name-only HEAD^..HEAD)
+            CHANGED_FRONTEND=$(echo "${CHANGED_FILES}" | grep -E '^react-frontend/')
+            CHANGED_BACKEND=$(echo "${CHANGED_FILES}" | grep -E '^express-backend/')
+
+            if [[ -n "${CHANGED_FRONTEND}" ]]; then
+              echo "::set-output name=folder::react-frontend"
+            elif [[ -n "${CHANGED_BACKEND}" ]]; then
+              echo "::set-output name=folder::express-backend"
             else
-              echo "::set-output name=folder::both"
+              echo "::set-output name=folder::"
             fi
           fi
 
