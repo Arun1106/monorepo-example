@@ -14,6 +14,8 @@ env:
   ECS_CLUSTER: test
   ECS_SERVICE_FRONTEND: fe
   ECS_SERVICE_BACKEND: be
+  ECS_SERVICE_FRONTEND: fe
+  ECS_SERVICE_BACKEND: be
 
 jobs:
   build-and-push:
@@ -79,18 +81,88 @@ jobs:
             docker push ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
           fi
 
-      - name: Configure AWS ECS
+      - name: Update ECS task definition
+        if: ${{ steps.changed-folder.outputs.folder != '' }}
         run: |
-          echo "AWS_REGION=${{ env.AWS_REGION }}" >> $GITHUB_ENV
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          FOLDER="${{ steps.changed-folder.outputs.folder }}"
 
-      - name: Deploy to ECS frontend
-        if: ${{ steps.changed-folder.outputs.folder == 'react-frontend' || steps.changed-folder.outputs.folder == 'both' }}
-        run: |
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE_FRONTEND }} --force-new-deployment --image "${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}"
+          if [ "${FOLDER}" == "react-frontend" ]; then
+            TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+              --region ${{ env.AWS_REGION }} \
+              --family ${{ env.ECS_TASK_DEFINITION_FRONTEND }} \
+              --container-definitions '[
+                {
+                  "name": "frontend",
+                  "image": "'${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}'",
+                  "essential": true
+                }
+              ]' \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text
+            )
+          elif [ "${FOLDER}" == "express-backend" ]; then
+            TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+              --region ${{ env.AWS_REGION }} \
+              --family ${{ env.ECS_TASK_DEFINITION_BACKEND }} \
+              --container-definitions '[
+                {
+                  "name": "backend",
+                  "image": "'${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}'",
+                  "essential": true
+                }
+              ]' \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text
+            )
+          elif [ "${FOLDER}" == "both" ]; then
+            # Update frontend task definition
+            aws ecs register-task-definition \
+              --region ${{ env.AWS_REGION }} \
+              --family ${{ env.ECS_TASK_DEFINITION_FRONTEND }} \
+              --container-definitions '[
+                {
+                  "name": "frontend",
+                  "image": "'${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}'",
+                  "essential": true
+                }
+              ]'
 
-      - name: Deploy to ECS backend
-        if: ${{ steps.changed-folder.outputs.folder == 'express-backend' || steps.changed-folder.outputs.folder == 'both' }}
+            # Update backend task definition
+            aws ecs register-task-definition \
+              --region ${{ env.AWS_REGION }} \
+              --family ${{ env.ECS_TASK_DEFINITION_BACKEND }} \
+              --container-definitions '[
+                {
+                  "name": "backend",
+                  "image": "'${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}'",
+                  "essential": true
+                }
+              ]'
+          fi
+
+      - name: Update ECS services
+        if: ${{ steps.changed-folder.outputs.folder != '' }}
         run: |
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE_BACKEND }} --force-new-deployment --image "${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}"
+          FOLDER="${{ steps.changed-folder.outputs.folder }}"
+
+          if [ "${FOLDER}" == "react-frontend" ]; then
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service ${{ env.ECS_SERVICE_FRONTEND }} \
+              --force-new-deployment
+          elif [ "${FOLDER}" == "express-backend" ]; then
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service ${{ env.ECS_SERVICE_BACKEND }} \
+              --force-new-deployment
+          elif [ "${FOLDER}" == "both" ]; then
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service ${{ env.ECS_SERVICE_FRONTEND }} \
+              --force-new-deployment
+
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service ${{ env.ECS_SERVICE_BACKEND }} \
+              --force-new-deployment
+          fi
