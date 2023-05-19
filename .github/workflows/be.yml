@@ -14,7 +14,7 @@ env:
   ECR_REPOSITORY_BACKEND: 818363358821.dkr.ecr.us-east-1.amazonaws.com/be
   ECS_CLUSTER: test
   ECS_SERVICE_BACKEND: be
-  ECS_TASK_DEFINITION_BACKEND: be
+  ECS_TASK_DEFINITION_FAMILY_BACKEND: be
 
 jobs:
   deploy:
@@ -40,23 +40,28 @@ jobs:
           docker tag express-backend ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
           docker push ${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}
 
-      - name: Update ECS task definition
+      - name: Create new task definition revision
+        id: create-task-definition
         run: |
           TASK_DEFINITION_BACKEND=$(aws ecs register-task-definition \
             --region ${{ env.AWS_REGION }} \
-            --family ${{ env.ECS_TASK_DEFINITION_BACKEND }} \
+            --family ${{ env.ECS_TASK_DEFINITION_FAMILY_BACKEND }} \
+            --network-mode awsvpc \
+            --requires-compatibilities FARGATE \
+            --cpu 256 \
+            --memory 512 \
             --container-definitions '[
               {
                 "name": "backend",
                 "image": "'${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}'",
                 "essential": true,
-                "memory": 512
+                "memory": 512,
+                "cpu": 256
               }
             ]' \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text
           )
-
           echo "TASK_DEFINITION_BACKEND=$TASK_DEFINITION_BACKEND" >> $GITHUB_ENV
 
       - name: Update ECS service
