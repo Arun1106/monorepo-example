@@ -14,7 +14,8 @@ env:
   ECR_REPOSITORY_FRONTEND: 818363358821.dkr.ecr.us-east-1.amazonaws.com/fe
   ECS_CLUSTER: test
   ECS_SERVICE_FRONTEND: fe
-  ECS_TASK_DEFINITION_FRONTEND: fe
+  ECS_TASK_DEFINITION_FAMILY_FRONTEND: fe
+  ECS_EXECUTION_ROLE_ARN: arn:aws:iam::818363358821:role/ecsTaskExecutionRole
 
 jobs:
   deploy:
@@ -40,23 +41,29 @@ jobs:
           docker tag react-frontend ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
           docker push ${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}
 
-      - name: Update ECS task definition
+      - name: Create new task definition revision
+        id: create-task-definition
         run: |
           TASK_DEFINITION_FRONTEND=$(aws ecs register-task-definition \
             --region ${{ env.AWS_REGION }} \
-            --family ${{ env.ECS_TASK_DEFINITION_FRONTEND }} \
+            --family ${{ env.ECS_TASK_DEFINITION_FAMILY_FRONTEND }} \
+            --network-mode awsvpc \
+            --requires-compatibilities FARGATE \
+            --cpu 256 \
+            --memory 512 \
+            --execution-role-arn ${{ env.ECS_EXECUTION_ROLE_ARN }} \
             --container-definitions '[
               {
                 "name": "frontend",
                 "image": "'${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}'",
                 "essential": true,
-                "memory": 512
+                "memory": 512,
+                "cpu": 256
               }
             ]' \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text
           )
-
           echo "TASK_DEFINITION_FRONTEND=$TASK_DEFINITION_FRONTEND" >> $GITHUB_ENV
 
       - name: Update ECS service
@@ -65,4 +72,4 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service ${{ env.ECS_SERVICE_FRONTEND }} \
-            --force-new-deployment
+            --task-definition ${{ env.TASK_DEFINITION_FRONTEND }}
