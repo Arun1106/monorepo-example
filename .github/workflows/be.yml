@@ -15,6 +15,7 @@ env:
   ECS_CLUSTER: test
   ECS_SERVICE_BACKEND: be
   ECS_TASK_DEFINITION_FAMILY_BACKEND: be
+  ECS_EXECUTION_ROLE_ARN: arn:aws:iam::123456789012:role/ecsTaskExecutionRole
 
 jobs:
   deploy:
@@ -50,6 +51,7 @@ jobs:
             --requires-compatibilities FARGATE \
             --cpu 256 \
             --memory 512 \
+            --execution-role-arn ${{ env.ECS_EXECUTION_ROLE_ARN }} \
             --container-definitions '[
               {
                 "name": "backend",
