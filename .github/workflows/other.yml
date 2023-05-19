@@ -20,7 +20,7 @@ env:
   ECS_SERVICE_BACKEND: be
   ECS_TASK_DEFINITION_FAMILY_FRONTEND: fe
   ECS_TASK_DEFINITION_FAMILY_BACKEND: be
-  ECS_EXECUTION_ROLE_ARN: arn:aws:iam::123456789012:role/ecsTaskExecutionRole
+  ECS_EXECUTION_ROLE_ARN: arn:aws:iam::818363358821:role/ecsTaskExecutionRole
 
 jobs:
   deploy:
