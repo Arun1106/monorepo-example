@@ -65,4 +65,4 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service ${{ env.ECS_SERVICE_BACKEND }} \
-            --force-new-deployment
+            --task-definition ${{ env.TASK_DEFINITION_BACKEND }}
